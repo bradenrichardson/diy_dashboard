@@ -5,7 +5,7 @@ from botocore.exceptions import ClientError
 
 
 def get_token():
-    secret_name = "up_api_key"
+    secret_name = "diy_dashboard_up_api_key"
     region_name = "ap-southeast-2"
     session = boto3.session.Session()
     client = session.client(
