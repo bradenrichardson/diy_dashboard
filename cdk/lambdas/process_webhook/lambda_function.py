@@ -1,13 +1,31 @@
 import json
 import requests
-import os
 import boto3
+from botocore.exceptions import ClientError
 
-api_token = os.getenv('api_token')
-api_url_base = 'https://api.up.com.au/api/v1/'
-headers = {'Authorization': 'Bearer {}'.format(api_token)}
+def get_token():
+    secret_name = "up_api_key"
+    region_name = "ap-southeast-2"
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        raise e
+    else:
+        secret = get_secret_value_response['SecretString']
+        return secret
+
 
 def retrieve_transaction(transaction_id):
+    api_url_base = 'https://api.up.com.au/api/v1/'
+    headers = {'Authorization': 'Bearer {}'.format(get_token())}
     api_url = api_url_base + 'transactions/' + transaction_id 
     response = requests.get(api_url, headers=headers)
     data = response.json()

@@ -1,11 +1,30 @@
 import json
-import os
 import boto3
 import requests
+from botocore.exceptions import ClientError
 
-api_token = os.getenv('api_token')
+
+def get_token():
+    secret_name = "up_api_key"
+    region_name = "ap-southeast-2"
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        raise e
+    else:
+        secret = get_secret_value_response['SecretString']
+        return secret
+
 api_url_base = 'https://api.up.com.au/api/v1/'
-headers = {'Authorization': 'Bearer {}'.format(api_token)}
+headers = {'Authorization': 'Bearer {}'.format(get_token())}
 
 def create_webhook(invoke_url):
     api_url = api_url_base + 'webhooks' 
@@ -55,16 +74,16 @@ def create_Dictionary():
                 
     return csvDictionary
 
-def write_to_dynamo(dictionary):
+def write_to_dynamo():
+    dictionary = create_Dictionary()
     dynamodb = boto3.client('dynamodb')
     a = 0
     for transaction in dictionary['id']:
-        dynamodb.put_item(TableName='quicksightTest', Item={'TransactionID':{'S': dictionary['id'][a]},'Category':{'S': dictionary['category'][a]}, 
+        dynamodb.put_item(TableName='diy_dashboard_up', Item={'TransactionID':{'S': dictionary['id'][a]},'Category':{'S': dictionary['category'][a]}, 
         'ParentCategory' : {'S' : dictionary['parentCategory'][a]}, 'Value' : {'N' : dictionary['value'][a]}, 'Description' : {'S' : dictionary['description'][a]}, 
         'CreatedAt' : {'S' : dictionary['createdAt'][a]}})
         a += 1
 
 
 def lambda_handler(event, context):
-    dictionary = create_Dictionary()
-    write_to_dynamo(dictionary)
+    write_to_dynamo()

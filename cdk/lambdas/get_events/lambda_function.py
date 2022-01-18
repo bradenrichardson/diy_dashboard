@@ -112,7 +112,7 @@ def put_events():
                     value = re.findall('[0-9]+', event['summary'])
                     type = 'Expense'
                 title = re.findall('\((.*?)\)', event['summary'])
-                dynamodb.put_item(TableName='calendarEvents', Item={
+                dynamodb.put_item(TableName='diy_dashboard_calendar', Item={
                     
                     'id':{'S': event['id']},
                     'date':{'S': event['start'].get('date')},
