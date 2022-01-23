@@ -61,7 +61,6 @@ class api_token:
     secret_name : str = "diy_dashboard_up_api_key"
     region_name : str = "ap-southeast-2"
 
-
     def __init__(self, **kwargs):
         if kwargs.get('secret_name'):
             self.secret_name = kwargs.get('secret_name')
@@ -100,12 +99,18 @@ class webhook:
     api_invoke_url : str
     id : str
 
-    def __init__(self, api_invoke_url):
-        self.api_invoke_url = api_invoke_url
+    def __init__(self):
+
+        client = boto3.client('ssm')
+        parameter = client.get_parameter(Name='api_invoke_url')
+        self.api_invoke_url = parameter.get('Parameter').get('Value')
+
         headers = {'Authorization': 'Bearer {}'.format(api_token())}
         api_url = 'https://api.up.com.au/api/v1/webhooks' 
+
         data_object = {"data": {"attributes": {"url" : self.api_invoke_url}}}
         response = requests.post(api_url, headers=headers, json=data_object)
+
         if response.status_code == 200:
             self.exists = True
             self.id = response.get('data').get('id')
@@ -145,8 +150,8 @@ def process_webhook(id):
 
     ##TODO Add reporting for pipeline before/after
 
-def create_webhook(api_url):
-    webhook(api_invoke_url=api_url)
+def create_webhook():
+    webhook()
 
     ##TODO Add reporting for pipeline before/after
 
@@ -189,8 +194,16 @@ def download_historical():
 
     ##TODO Add reporting for pipeline before/after
 
+def choose_action(event):
+    if event.get('download_historical') == True:
+        download_historical()
+    if event.get('create_webhook') == True:
+        create_webhook()
+    else:
+        process_webhook()
+
     
 
 
 def lambda_handler(event, context):
-    print(event)
+    choose_action(event)

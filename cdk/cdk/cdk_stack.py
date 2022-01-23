@@ -9,7 +9,8 @@ from aws_cdk import (
     aws_s3 as _s3,
     aws_athena as _athena,
     aws_sam as _sam,
-    aws_secretsmanager as _secrets
+    aws_secretsmanager as _secrets,
+    aws_ssm as _ssm
 )
 from aws_cdk.aws_apigatewayv2_integrations import HttpLambdaIntegration
 
@@ -59,11 +60,18 @@ class CdkStack(cdk.Stack):
 
         api = aws_apigatewayv2.HttpApi(self, "diy_dashboard_HttpApi")
 
+        api.add_stage('webhook', auto_deploy=True)
+
         api.add_routes(
             path="/diy_dashboard_webhook",
             methods=[aws_apigatewayv2.HttpMethod.POST],
             integration=process_webhook_integration
         )
+
+        api_invoke_url = _ssm.CfnParameter(self, 'api_invoke_url',
+            type='string',
+            value=api.url
+            )
 
         with open('./secrets.json', 'r') as secrets:
             data = json.load(secrets)

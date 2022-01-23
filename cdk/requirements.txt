@@ -8,3 +8,4 @@ aws_cdk.aws_apigatewayv2_integrations
 aws_cdk.aws_athena
 aws_cdk.aws_sam
 aws_cdk.aws_secretsmanager
+aws_cdk.aws_ssm
