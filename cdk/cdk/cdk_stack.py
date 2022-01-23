@@ -36,17 +36,10 @@ class CdkStack(cdk.Stack):
             description='A layer to send API requests'
         )
         
-        process_webhook = _lambda.Function(self, 'diy_dashboard_process_webhook', 
-            runtime=_lambda.Runtime.PYTHON_3_9, 
-            handler='lambda_function.handler',
-            code= _lambda.Code.from_asset('lambdas\process_webhook'),
-            layers=[requests_layer]
-            )
-        
-        provision_user = _lambda.Function(self, "diy_dashboard_provision_user",
+        diy_dashboard_compute = _lambda.Function(self, "diy_dashboard_compute",
             runtime=_lambda.Runtime.PYTHON_3_9,
             handler='lambda_function.handler',
-            code= _lambda.Code.from_asset('lambdas\provision_user'),
+            code= _lambda.Code.from_asset('lambdas\diy_dashboard_compute'),
             layers=[requests_layer]
         )
 
@@ -57,13 +50,12 @@ class CdkStack(cdk.Stack):
             layers=[requests_layer]
         )
 
-        up_dynamodb.grant_read_write_data(process_webhook)
 
-        up_dynamodb.grant_read_write_data(provision_user)
+        up_dynamodb.grant_read_write_data(diy_dashboard_compute)
 
         calendar_dynamodb.grant_read_write_data(get_events)
 
-        process_webhook_integration = HttpLambdaIntegration("Process Webhook Integration", process_webhook)
+        process_webhook_integration = HttpLambdaIntegration("Process Webhook Integration", diy_dashboard_compute)
 
         api = aws_apigatewayv2.HttpApi(self, "diy_dashboard_HttpApi")
 
