@@ -14,8 +14,6 @@ from aws_cdk import (
 )
 from aws_cdk.aws_apigatewayv2_integrations import HttpLambdaIntegration
 
-
-
 class CdkStack(cdk.Stack):
 
     def __init__(self, scope: cdk.Construct, construct_id: str, **kwargs) -> None:

@@ -1,6 +1,3 @@
-import json
-import string
-from unicodedata import category
 import boto3
 import requests
 from botocore.exceptions import ClientError
@@ -105,7 +102,7 @@ class webhook:
         parameter = client.get_parameter(Name='api_invoke_url')
         self.api_invoke_url = parameter.get('Parameter').get('Value')
 
-        headers = {'Authorization': 'Bearer {}'.format(api_token())}
+        headers = {f'Authorization': 'Bearer {api_token}'}
         api_url = 'https://api.up.com.au/api/v1/webhooks' 
 
         data_object = {"data": {"attributes": {"url" : self.api_invoke_url}}}
@@ -124,86 +121,3 @@ class webhook:
         }
 
         return dictionary
-
-
-def process_webhook(id):
-    headers = {'Authorization': 'Bearer {}'.format(api_token())}
-    api_url = 'https://api.up.com.au/api/v1/transactions/' + id 
-    response = requests.get(api_url, headers=headers)
-    data = response.json()
-    transaction(
-        transaction_id=id,
-        description=data.get('data').get('attributes').get('description'),
-        value=data.get('data').get('attributes').get('amount').get('value'),
-        date=data.get('data').get('attributes').get('createdAt')
-    )
-    if data.get('data').get('relationships').get('category').get('data'):
-        transaction(category=data.get('data').get('relationships').get('category').get('data').get('id'))
-    else:
-        transaction(category='Uncategorized')
-    if data.get('data').get('relationships').get('parentCategory').get('data'):
-        transaction(parent_category=data.get('data').get('relationships').get('parentCategory').get('data').get('id'))
-    else:
-        transaction(parent_category='Uncategorized')
-
-    transaction.write_to_database()
-
-    ##TODO Add reporting for pipeline before/after
-
-def create_webhook():
-    webhook()
-
-    ##TODO Add reporting for pipeline before/after
-
-def download_historical():
-    headers = {'Authorization': 'Bearer {}'.format(api_token())}
-    response = requests.get('https://api.up.com.au/api/v1/transactions', headers=headers)
-    print(response)
-
-    if response.status_code == 200:
-        data = []
-        data.append(response.json().get('data'))
-        if response.json().get('links').get('next'):
-            token = response.json().get('links').get('next')
-            while token:
-                response = requests.get(token, headers=headers)
-                data.append(response.json().get('data'))
-                token = response.json().get('links').get('next')
-                if token:
-                    print("Processing token: {}".format(token))
-                else:
-                    print("Finished processing tokens")
-    else:
-        print(response.status_code)
-
-    for array in data:
-        for event in array:
-            transaction(transaction_id=event.get('id'))
-            transaction(description=event.get('attributes').get('description'))
-            transaction(value=event.get('attributes').get('amount').get('value'))
-            transaction(date=event.get('attributes').get('createdAt'))
-            if event.get('relationships').get('category').get('data'):
-                transaction(category=event.get('relationships').get('category').get('data').get('id'))
-            else:
-                transaction(category='Uncategorized')
-            if event.get('relationships').get('parentCategory').get('data'):
-                transaction(parent_category=event.get('relationships').get('parentCategory').get('data').get('id'))
-            else:
-                transaction(parent_category='Uncategorized')
-        transaction.write_to_database()
-
-    ##TODO Add reporting for pipeline before/after
-
-def choose_action(event):
-    if event.get('download_historical') == True:
-        download_historical()
-    if event.get('create_webhook') == True:
-        create_webhook()
-    else:
-        process_webhook()
-
-    
-
-
-def lambda_handler(event, context):
-    choose_action(event)

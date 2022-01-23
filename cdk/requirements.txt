@@ -12,3 +12,9 @@ aws_cdk.aws_ssm
 aws_cdk.aws_codecommit
 aws_cdk.aws_codepipeline
 aws_cdk.aws_codepipeline_actions
+requests
+boto3
+uvicorn
+fastapi>=0.72.0
+httpx
+starlette

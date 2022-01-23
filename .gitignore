@@ -1,2 +1,4 @@
+.venv
 credentials.json
 secrets.json
+*.pyc
