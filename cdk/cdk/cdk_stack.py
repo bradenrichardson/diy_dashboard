@@ -5,12 +5,12 @@ from aws_cdk import (
     core as cdk,
     aws_lambda as _lambda,
     aws_dynamodb as _dynamo,
-    aws_iam as _iam,
-    aws_s3 as _s3,
-    aws_athena as _athena,
-    aws_sam as _sam,
-    aws_secretsmanager as _secrets,
-    aws_ssm as _ssm
+    aws_ssm as _ssm,
+    aws_codecommit as _codecommit,
+    aws_codepipeline as _codepipeline,
+    aws_codepipeline_actions as _actions_codepipeline,
+    aws_s3 as _s3
+    
 )
 from aws_cdk.aws_apigatewayv2_integrations import HttpLambdaIntegration
 
@@ -51,7 +51,6 @@ class CdkStack(cdk.Stack):
             layers=[requests_layer]
         )
 
-
         up_dynamodb.grant_read_write_data(diy_dashboard_compute)
 
         calendar_dynamodb.grant_read_write_data(get_events)
@@ -73,8 +72,46 @@ class CdkStack(cdk.Stack):
             value=api.url
             )
 
-        with open('./secrets.json', 'r') as secrets:
-            data = json.load(secrets)
-            for key in data:
-                _secrets.CfnSecret(self, key, secret_string=data[key])
+        repo = _codecommit.CfnRepository(self, 'diy_dashboard_repo',
+            repository_name='diy_dashboard_repo')
+
+
+        artifact_bucket = _s3.Bucket(self, 'artifact_store')
+        
+        source_output = _codepipeline.Artifact("SourceArtifact")
+
+
+
+        # pipeline_source = _actions_codepipeline.CodeCommitSourceAction(
+        #     action_name="Source",
+        #     repository=repo,
+        #     output=source_output,
+        #     trigger=_actions_codepipeline.CodeCommitTrigger.POLL
+        # )
+
+        # pipeline_compute = _actions_codepipeline.LambdaInvokeAction(
+        #     action_name="Lambda Compute",
+        #     inputs=[source_output
+        #     ],
+        #     outputs=[
+        #         _codepipeline.Artifact("Out1"),
+        #         _codepipeline.Artifact("Out2")
+        #     ],
+        #     lambda_=diy_dashboard_compute
+        # )
+
+        # pipeline = _codepipeline.Pipeline(self, "diy_dashboard_pipeline",
+        #     pipeline_name="diy_dashboard_pipeline"
+        # )
+
+        # source_stage = pipeline.add_stage(stage_name="Source",
+        #     actions=[pipeline_source])
+
+        # compute_stage = pipeline.add_stage(stage_name="Compute",
+        #     actions=[pipeline_compute])
+
+
+
+        print('\nGithub Clone URL: {}\n'.format(repo.attr_clone_url_http))
+        
 
