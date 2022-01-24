@@ -98,6 +98,8 @@ class webhook:
 
     def __init__(self):
 
+        # TODO: Check if webhook exists before creating one
+
         client = boto3.client('ssm')
         parameter = client.get_parameter(Name='api_invoke_url')
         self.api_invoke_url = parameter.get('Parameter').get('Value')

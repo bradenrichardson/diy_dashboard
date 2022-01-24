@@ -14,7 +14,6 @@ RUN pip3 install -r /app/requirements.txt
 COPY ./docker/ /app
 
 EXPOSE 80
-EXPOSE 8000
 
 ENTRYPOINT /usr/local/bin/gunicorn \
     -b 0.0.0.0:80 \
