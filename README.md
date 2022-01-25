@@ -48,3 +48,5 @@
 
 #### v0.8
 * Multiple data sources
+
+![v1.0](diagrams/v1.0.png)
